@@ -138,6 +138,54 @@ def gradient_descent(X, y, max_iter=100, tol=1e-14, family=Logistic, **kwargs):
 
 
 @normalize
+def sag(X, y, max_iter=10, tol=1e-4, family=Logistic, **kwargs):
+    """
+    Implementation of Stochastic Average Gradient
+
+    Parameters
+    ----------
+    X : array-like, shape (n_samples, n_features)
+    y : array-like, shape (n_samples,)
+    max_iter : int
+        maximum number of iterations to attempt before declaring
+        failure to converge
+    tol : float
+        Maximum allowed change from prior iteration required to
+        declare convergence
+
+    Returns
+    -------
+    beta : array-like, shape (n_features,)
+
+    Reference
+    ---------
+    @article{schmidt2013minimizing,
+        Author = {Schmidt, Mark and Le Roux, Nicolas and Bach, Francis},
+        Journal = {Mathematical Programming},
+        Pages = {1--30},
+        Title = {Minimizing finite sums with the stochastic average gradient},
+        Year = {2013}}
+
+    """
+    loglike, gradient = family.loglike, family.gradient
+    L = 1e3  # Lipschitz constant; should know L from our probability family?
+    stepSize = 1 / L  # can do line search when L not known,
+    n, p = X.shape
+    d = 0
+    y_sag = np.zeros((n, p))
+    beta = np.zeros(p)
+    for k in range(int(max_iter)):
+        for _ in range(n):
+            i = np.random.choice(n)
+            g = gradient(beta, X[i], y[i])
+            d = d + g - y_sag[i]
+            y_sag[i] = g
+            beta -= stepSize * d / n
+            # need condition to check for relative change
+    return beta
+
+
+@normalize
 def newton(X, y, max_iter=50, tol=1e-8, family=Logistic, **kwargs):
     """Newtons Method for Logistic Regression.
 
